@@ -9,17 +9,47 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
 
 #define PORT 8080
+#define BLOCKSIZE 1024
 
-void sendFile()
+long GetFileSize(std::string filename)
 {
-	
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
+
+void sendFile(int newsocket, std::string filename)
+{
+	std::string line;
+  	std::ifstream myfile(filename, std::ios::binary);
+	char buffer[1024];
+	long fileSize = GetFileSize(filename);
+	std::string ssize = std::to_string(fileSize);
+
+	send(newsocket, ssize.c_str(), ssize.length(), 0);
+
+	if (myfile.is_open())
+	{
+		while (myfile)
+		{
+			myfile.read(buffer, 1024);
+			send(newsocket, buffer, 1024, 0);
+			std::cout << "gcount" << myfile.gcount() << '\n';
+		}
+		myfile.close();
+	}
+	else std::cout << "Unable to open file"; 
 }
 
 int main(int argc, char const* argv[])
 {
 	int server_fd, new_socket, valread;
+	if(argc < 2)
+		std::cout << "Enter a file name to send";
+	std::string filename = argv[1];
 	struct sockaddr_in address;
 	int opt = 1;
 	int addrlen = sizeof(address);
@@ -62,8 +92,10 @@ int main(int argc, char const* argv[])
 	printf("%s\n", buffer);
 
 	// send the file line by line
-	send(new_socket, hello, strlen(hello), 0);
-	printf("Hello message sent\n");
+	//send(new_socket, hello, strlen(hello), 0);
+	sendFile(new_socket, filename);
+	
+	//printf("Hello message sent\n");
 
 	// closing the connected socket
 	close(new_socket);

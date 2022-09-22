@@ -5,7 +5,19 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fstream>
+#include <iostream>
+#include <sys/stat.h>
+
 #define PORT 8080
+
+long GetFileSize(std::string filename)
+{
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
+
 
 int main(int argc, char const* argv[])
 {
@@ -35,9 +47,32 @@ int main(int argc, char const* argv[])
 	}
 	
 	send(sock, hello, strlen(hello), 0);
-	printf("Hello message sent\n");
 	valread = read(sock, buffer, 1024);
-	printf("%s\n", buffer);
+
+	//convert first message to the fileSize
+	long fileSize = std::stol(buffer);
+	std::cout << "long : " << fileSize << "\n";
+	
+	// get in the entire file
+  	std::fstream outfile;
+	outfile.open ("output.txt", std::ios::binary|std::ios::out);
+	if (outfile.is_open())
+	{
+		while(fileSize > 0)
+		{
+			long readSize = fileSize > 1024 ? 1024 : fileSize;
+			size_t before = outfile.tellp();
+			valread = read(sock, buffer, readSize);
+			outfile.write(buffer, readSize);
+			size_t after = outfile.tellp();
+			size_t numBytesWritten = after - before;
+			fileSize -= numBytesWritten;
+			std::cout << "wrote : " << numBytesWritten << "\n";
+		}
+		outfile.close();
+	}
+	else std::cout << "Unable to open file";
+
 
 	// closing the connected socket
 	close(client_fd);
