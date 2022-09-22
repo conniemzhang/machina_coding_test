@@ -47,9 +47,6 @@ void sendFile(int newsocket, std::string filename)
 int main(int argc, char const* argv[])
 {
 	int server_fd, new_socket, valread;
-	if(argc < 2)
-		std::cout << "Enter a file name to send";
-	std::string filename = argv[1];
 	struct sockaddr_in address;
 	int opt = 1;
 	int addrlen = sizeof(address);
@@ -90,6 +87,7 @@ int main(int argc, char const* argv[])
 	}
 	valread = read(new_socket, buffer, 1024);
 	printf("%s\n", buffer);
+	std::string filename = buffer;
 
 	// send the file line by line
 	//send(new_socket, hello, strlen(hello), 0);

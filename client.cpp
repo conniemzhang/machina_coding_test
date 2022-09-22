@@ -23,7 +23,7 @@ int main(int argc, char const* argv[])
 {
 	int sock = 0, valread, client_fd;
 	struct sockaddr_in serv_addr;
-	const char* hello = "Hello from client";
+	const char* hello = argv[1];
 	char buffer[1024] = { 0 };
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		printf("\n Socket creation error \n");
@@ -55,7 +55,7 @@ int main(int argc, char const* argv[])
 	
 	// get in the entire file
   	std::fstream outfile;
-	outfile.open ("output.txt", std::ios::binary|std::ios::out);
+	outfile.open ("output.stl", std::ios::binary|std::ios::out);
 	if (outfile.is_open())
 	{
 		while(fileSize > 0)
