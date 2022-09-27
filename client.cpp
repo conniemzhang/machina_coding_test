@@ -1,15 +1,15 @@
 // Client side C/C++ program to demonstrate Socket
 // programming
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <fstream>
-#include <iostream>
-#include <sys/stat.h>
+#include "socket.h"
+#include <cstdio>
+#include <cstring>
 
-#define PORT 8080
+#define PORT 1234
+#define PORT2 1232
+#define FILENAME "cad_mesh.stl"
+#define OUTFILENAME "output.stl"
+
+using namespace std;
 
 long GetFileSize(std::string filename)
 {
@@ -18,63 +18,16 @@ long GetFileSize(std::string filename)
     return rc == 0 ? stat_buf.st_size : -1;
 }
 
-
-int main(int argc, char const* argv[])
+int main()
 {
-	int sock = 0, valread, client_fd;
-	struct sockaddr_in serv_addr;
-	const char* hello = argv[1];
-	char buffer[1024] = { 0 };
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		printf("\n Socket creation error \n");
-		return -1;
-	}
-
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(PORT);
-
-	// Convert IPv4 and IPv6 addresses from text to binary form
-	if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-		printf(
-			"\nInvalid address/ Address not supported \n");
-		return -1;
-	}
-
-	if ((client_fd = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) 
-	{
-		printf("\nConnection Failed \n");
-		return -1;
-	}
+	Socket *cli_sock = new Socket();
+	cli_sock->connect(PORT);
 	
-	send(sock, hello, strlen(hello), 0);
-	valread = read(sock, buffer, 1024);
+	std::string line;
+	long fileSize = GetFileSize(FILENAME);
+	cout<<fileSize<<endl;
 
-	//convert first message to the fileSize
-	long fileSize = std::stol(buffer);
-	std::cout << "long : " << fileSize << "\n";
+	cli_sock->sendFile(FILENAME, 1024);
+	cli_sock->recvFile(OUTFILENAME, 1024);
 	
-	// get in the entire file
-  	std::fstream outfile;
-	outfile.open ("output.stl", std::ios::binary|std::ios::out);
-	if (outfile.is_open())
-	{
-		while(fileSize > 0)
-		{
-			long readSize = fileSize > 1024 ? 1024 : fileSize;
-			size_t before = outfile.tellp();
-			valread = read(sock, buffer, readSize);
-			outfile.write(buffer, readSize);
-			size_t after = outfile.tellp();
-			size_t numBytesWritten = after - before;
-			fileSize -= numBytesWritten;
-			std::cout << "wrote : " << numBytesWritten << "\n";
-		}
-		outfile.close();
-	}
-	else std::cout << "Unable to open file";
-
-
-	// closing the connected socket
-	close(client_fd);
-	return 0;
 }
